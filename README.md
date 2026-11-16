@@ -14,6 +14,7 @@
 
 ## Starting the Program
 
+- Make sure curl is installed (run curl --version)
 - **Run Command:** sudo ./main.sh
 - Upon starting, the program checks for a licensing file, which allows the program to proceed on schedule if present
 - If the licensing file is missing, the user will be prompted for a key
