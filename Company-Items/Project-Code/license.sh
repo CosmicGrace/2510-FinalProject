@@ -38,14 +38,6 @@ readonly _LICENSE_FILE="${_LICENSE_DIR}/${FILE}"
 # _deobfuscate_key() undoes all three steps at runtime to rebuild the key
 # in memory, in a local variable, only for as long as it takes to hash it.
 #
-# HONESTY ABOUT WHAT THIS DOES AND DOESN'T DO: this is obfuscation, not
-# encryption. Anyone who reads this file carefully and reverses the three
-# steps by hand gets the key back - that is true of ANY secret embedded in
-# a script that has to run with no server to check against, no matter how
-# it's hidden. It satisfies the assignment's actual wording ("obfuscated
-# ... so it cannot be seen in clear text"), which is about a casual look
-# or a plain `grep` not turning it up, not about being unbreakable.
-#
 # Run tools/make_license_key.sh to turn your real key into the two lines
 # below. _KEY_PAD must be IDENTICAL in both files, or the key won't rebuild.
 readonly _KEY_PAD="4815162342908223"
