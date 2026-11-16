@@ -1,107 +1,150 @@
 # !/usr/bin/env bash
 #
-# lib/users.sh - Parts 2 & 3:
-#   username/password rules + acc creation.
+#   main.sh - This holds the menu for the code
 #
-# Target environment: Ubuntu 26.04, Bash 5.3.
-# 
+#   What it does:
+#       1. Enforces the license check
+#       2. Shows a text menu
+#           [1] Import faculty from website
+#           [2] Add a single user manually
+#           [3] Remove a user
+#           [4] Quit
 #
-# Public Functions:
+#   Must be run as root (creating users requires it):
+#       sudo ./main.sh
 #
-#   create_user_acc "Full Name"
-#       Accepts a full name and uses the first
-#       word as first name and last word, before any
-#       comma, as the last name.
 #
-#   Return Codes: 
-#       0 = created
-#       1 = failed
-#       2 = already existed
+#   The other code files are what helps this run properly
+#       scrape.sh - downlads + parse names
+#       users.sh - username/password rules, create and remove accounts
+#       
 
-readonly PASSWORD_PHRASE = "HALBERD"
-readonly MAX_USERNAME_BYTES = 32 # Linux limit (bytes, not characters)
 
-# Lowercase a name and strip it down to letters, hyphens and apostrophes
-# C.UTF-8 will make bash understand accented letters because it won't otherwise ;P
+set -u
 
-normalize_part() {
-    local LC_ALL=C.UTF-8
-    local part="${1,,}"                 # lowercase (works on accents too)
-    part="${part//'/"'"}"               # curly apostrope -> straight one
-    local unwanted="[^[:alpha:]'-]"     # anything that is not a lette, ' or -
-    printf '%s' "${part//$unwanted/}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+source "${SCRIPT_DIR}/lib/license.sh"
+source "${SCRIPT_DIR}/lib/scrape.sh"
+source "${SCRIPT_DIR}/lib/users.sh"
+
+
+# ---------------------------------------------------------------------------
+#       Helpers
+# ---------------------------------------------------------------------------
+
+require_root() {
+    if (( EUID != 0 )); then
+        echo "ERROR: this tool creates users, so it must be run as root." >&2
+        echo "      Try: sudo $0" >&2
+        exit 1
+    fi
+}
+
+show_menu() {
+    echo
+    echo "=============================================="
+    echo "    hAlberd Technologies - Facaulty Account
+    echo "                  Onboarding
+    echo "=============================================="
+
+    echo "  1) Import faculty from website (default option)"
+    echo "  2) Add a single user manually"
+    echo "  3) Remove a user"
+    echo "  4) Quit"
+}
+
+# Ask a yes/no question. Returns 0 only for "y" or "yes".
+# Anything else (including pressing enter) will decline
+confirm() {
+    local answer
+    read -r -p "$1 [y/n]: " answer
+    case "${answer,,}" in
+        y|yes return 0 ;;
+        *)    return 1 ;;
+    esac  
 }
 
 
-# Length in BYTES (an accented e is 2 bytes). Linus usernames max out at 32 bytes.
-byte_length() {
-    local LC_ALL=C
-    printf '%d' "${#1}"
+# ---------------------------------------------------------------------------
+#       Menu Actions
+# ---------------------------------------------------------------------------
+
+# Menu option 1: scrape names and then create a account for each facaulty member
+action_import_faculty() {
+    local names name
+    local created=0 existed=0 failed=0
+
+    echo "Downloading faculty page..."
+    names=$(scrape_faculty_names) || return 1 
+
+    echo "Found $(wc -l <<< "$names") people. Creating accounts..."
+    while IFS= read -r name; do
+        create_user_account "$name" 
+        case $? in 
+            0) (( created++ )) ;; 
+            2) (( existed++ )) ;; 
+            *) (( failed++ )) ;; 
+        esac  
+    done <<< "$names"
+
+    echo
+    echo "Done. Created: $created | Already existed: $existed | Failed: $failed"
+
 }
 
-create_user_acc() {
-    local full_name="${1%%,*}"
-    local -a words
+# Menu option 2: add one user by typing their name
+action_add_user() {
+    local first last
+    read -r -p "First name: " first
+    read -r -p "Last name: " last
+    create_use "$first" "$last"
+}
 
-    read -ra wods <<< "$full_name"
+# Menu option 3: Remove a user. Asks for first and last name
+action_remove_user() {
+    local first last username delete_home="no"
 
-    if (( ${#words[@]} < 2)); then
-        echo " [failed] '$1' needs both a first and last name" >&2
+    read -r -p "First name of user to remove: " first
+    read -r -p "Last name: " last
+
+    username=$(make_username "$first" "$last") || {
+        echo " [failed] need both a valid first and last name" >&2
         return 1
-    fi
+    }
 
-    # ${words[*]} re-joins the words with single spaces
-    create_user "${words[0]}" "${words[-1]}" "${words[]}"
+    confirm "Remove the account '$username'?" || { echo "Cancelled."; return 0; }
+
+    confirm "Also DELETE their home directory and files? (cannot be undone)" \ && delete_home="yes"
+
+    remove_user "$username" "$delete_home"
 }
 
 
-create_user() {
-    local first last username password real_name
+# ---------------------------------------------------------------------------
+#       Main loopty loop
+# ---------------------------------------------------------------------------
 
-    first=$(normalize_part "$1")
-    last=$(normalize_part "$2")
-    real_name="${3:-$1 $2}"
-    real_name="${real_name//[:,]/}"     # ":" and "," would corrupt /etc/passwd
+main() {
+    require_root
+    license_enforce || exit 1       # no valid license -> get blicked no runnign code for you
 
-    if [[ -z $first || -z $last ]]; then
-        echo "  [failed]  need both a first and last name (got '$1' '$2')" >&2
-        return 1
-    fi
+    local choice
+    while true; do
+        show_menu # showing the menu to the user
+        read -r -p "Choose an option [1]: " choice  # User enters menu choice here :P
 
-    username="${first}.${last}"
-    password="${first}${last}${PASSWORD_PHRASE}"
+        choice="${choice:-1}"   # pressing Enter = default action of option 1
 
-    # We do our own checks, because we ask useradd to skip its strict ones.
-    if [[ $username == -* ]]; then
-        echo "  [failed]  username '$username' may not start with '-'" >&2
-        return 1
-    fi
-    if (( $(byte_length "$username") > MAX_USERNAME_BYTES )); then
-        echo "  [failed]  username '$username' is longer than $MAX_USERNAME_BYTES bytes" >&2
-        return 1
-    fi
+        case "$choice" in
+            1) action_import_faculty ;;
+            2)  action_add_user ;;
+            3) action_remove_user ;;
+            4) echo "Goodbye!"; exit 0 ;;
+            *) echo "Invalid choice of '$choice', try again!"
+        esac
 
-    if id "$username" &>/dev/null; then
-        echo "  [exists]  $username"
-        return 2
-    fi
-
-
-    # --badname : accept apostrophes/accents (useradd's default check is strict)
-    # --comment : store the person's real name on the account
-    if ! useradd --badname --create-home --shell /bin/bash \
-                 --comment "$real_name" "$username"; then
-        echo "  [failed]  useradd failed for $username" >&2
-        return 1
-    fi
-
-    # Password goes in through a pipe (printf is a Bash builtin), so it never
-    # appears on a command line where `ps` could show it to other users.
-    if ! printf '%s:%s\n' "$username" "$password" | chpasswd; then
-        echo "  [failed]  could not set password for $username" >&2
-        return 1
-    fi
-
-    echo "  [created] $username   ($real_name)"
-    return 0
+    done
 }
+
+main "$@"
