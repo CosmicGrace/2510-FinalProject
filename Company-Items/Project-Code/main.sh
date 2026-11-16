@@ -25,7 +25,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 source "${SCRIPT_DIR}/lib/license.sh"
-source "${SCRIPT_DIR}/lib/scrape.sh"
+source "${SCRIPT_DIR}/lib/scraper.sh"
 source "${SCRIPT_DIR}/lib/users.sh"
 
 
