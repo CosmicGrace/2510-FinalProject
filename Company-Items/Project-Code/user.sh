@@ -116,7 +116,7 @@ make_username() {
     first=$(normalize_part "$1")
     last=$(normalize_part "$2")
 
-    [[ -2 $first && -n $last ]] || return 1
+    [[ -n $first && -n $last ]] || return 1
     printf '%s.%s' "$first" "$last"
 }
 

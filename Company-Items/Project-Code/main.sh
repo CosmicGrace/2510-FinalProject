@@ -127,7 +127,7 @@ action_remove_user() {
 
 main() {
     require_root
-    # license_enforce || exit 1       # no valid license -> get blicked no runnign code for you
+    license_enforce || exit 1       # no valid license -> get blicked no runnign code for you
 
     local choice
     while true; do

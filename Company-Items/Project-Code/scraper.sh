@@ -1,6 +1,6 @@
 
 
-scraper() {
+scrape_faculty_names() {
     local url="https://www.tntech.edu/engineering/programs/csc/faculty-and-staff.php"
     echo "Downloading faculty page from $url..."
     
