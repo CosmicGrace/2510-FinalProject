@@ -90,13 +90,21 @@ create_user() {
     fi
 
 
-    # --badname : accept apostrophes/accents (useradd's default check is strict)
-    # --comment : store the person's real name on the account
-    if ! useradd --badname --create-home --shell /bin/bash \
-                 --comment "$real_name" "$username"; then
-        echo "  [failed]  useradd failed for $username" >&2
-        return 1
+
+    local useradd_err
+    if ! useradd_err=$(useradd --create-home --shell /bin/bash \
+                                --comment "$real_name" "$username" 2>&1); then
+        if [[ $useradd_err == *"invalid"* ]]; then
+            useradd_err=$(useradd --badname --create-home --shell /bin/bash \
+                                   --comment "$real_name" "$username" 2>&1)
+        fi
+        if [[ -n $useradd_err ]] && ! id "$username" &>/dev/null; then
+            echo "  [failed]  useradd failed for $username: $useradd_err" >&2
+            return 1
+        fi
     fi
+
+    
 
     # Password goes in through a pipe (printf is a Bash builtin), so it never
     # appears on a command line where `ps` could show it to other users.
