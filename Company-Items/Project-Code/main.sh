@@ -1,4 +1,4 @@
-# !/usr/bin/env bash
+#!/usr/bin/env bash
 #
 #   main.sh - This holds the menu for the code
 #
@@ -44,8 +44,8 @@ require_root() {
 show_menu() {
     echo
     echo "=============================================="
-    echo "    hAlberd Technologies - Facaulty Account
-    echo "                  Onboarding
+    echo "    hAlberd Technologies - Facaulty Account   "
+    echo "                  Onboarding                  "
     echo "=============================================="
 
     echo "  1) Import faculty from website (default option)"
@@ -58,9 +58,9 @@ show_menu() {
 # Anything else (including pressing enter) will decline
 confirm() {
     local answer
-    read -r -p "$1 [y/n]: " answer
+    read -r -p "$1 [y/N]: " answer
     case "${answer,,}" in
-        y|yes return 0 ;;
+        y|yes) return 0 ;;
         *)    return 1 ;;
     esac  
 }
@@ -71,7 +71,7 @@ confirm() {
 # ---------------------------------------------------------------------------
 
 # Menu option 1: scrape names and then create a account for each facaulty member
-action_import_faculty() {
+action_import_faculty() { 
     local names name
     local created=0 existed=0 failed=0
 
@@ -98,7 +98,7 @@ action_add_user() {
     local first last
     read -r -p "First name: " first
     read -r -p "Last name: " last
-    create_use "$first" "$last"
+    create_user "$first" "$last"
 }
 
 # Menu option 3: Remove a user. Asks for first and last name
@@ -115,7 +115,7 @@ action_remove_user() {
 
     confirm "Remove the account '$username'?" || { echo "Cancelled."; return 0; }
 
-    confirm "Also DELETE their home directory and files? (cannot be undone)" \ && delete_home="yes"
+    confirm "Also DELETE their home directory and files? (cannot be undone)" && delete_home="yes"
 
     remove_user "$username" "$delete_home"
 }

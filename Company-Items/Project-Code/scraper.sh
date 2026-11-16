@@ -1,3 +1,5 @@
+
+
 scraper() {
     local url="https://www.tntech.edu/engineering/programs/csc/faculty-and-staff.php"
     echo "Downloading faculty page from $url..."

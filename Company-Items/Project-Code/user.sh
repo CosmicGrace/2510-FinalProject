@@ -1,4 +1,4 @@
-# !/usr/bin/env bash
+#!/usr/bin/env bash
 #
 # lib/users.sh - Parts 2 & 3:
 #   username/password rules + acc creation.
