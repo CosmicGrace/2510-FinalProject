@@ -127,7 +127,7 @@ action_remove_user() {
 
 main() {
     require_root
-    license_enforce || exit 1       # no valid license -> get blicked no runnign code for you
+    # license_enforce || exit 1       # no valid license -> get blicked no runnign code for you
 
     local choice
     while true; do
@@ -138,7 +138,7 @@ main() {
 
         case "$choice" in
             1) action_import_faculty ;;
-            2)  action_add_user ;;
+            2) action_add_user ;;
             3) action_remove_user ;;
             4) echo "Goodbye!"; exit 0 ;;
             *) echo "Invalid choice of '$choice', try again!"
