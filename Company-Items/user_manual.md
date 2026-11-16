@@ -14,7 +14,7 @@
 
 ## Starting the Program
 
-- **Run Command:** (enter command here)
+- **Run Command:** sudo ./main.sh
 - Upon starting, the program checks for a licensing file, which allows the program to proceed on schedule if present
 - If the licensing file is missing, the user will be prompted for a key
 
@@ -27,7 +27,7 @@
     3) Remove user
     4) Quit
 
-- **Default Action**
+- **Default Action:**
     The default action in the scope of the project is to scrape the TN Tech Computer Science Faculty website and parse through the names to be created into user accounts.
 
 
