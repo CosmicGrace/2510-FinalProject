@@ -85,5 +85,12 @@
 
 ## Licensing
 
-    - (add info here)
+    - **Purpose:**
+        The purpose of the licensing is to make sure user creation is authorized by requiring a key to make changes to the system.
+
+    - Initially, the program will check to see if a licensing file exists in the directory.
+        - If the file exists, the program continues to run.
+        - If the file doesn't exist, the program prompts the user for a key to move any further.
+
+    - The 16-digit key obfuscation will be handled by AI
         
